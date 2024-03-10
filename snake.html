@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>贪吃蛇游戏</title>
+<style>
+  body, html {
+    height: 100%;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: white;
+  }
+  #gameCover {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    flex-direction: column;
+    background-color: yellow; /* Set cover background to yellow */
+  }
+  #gameArea {
+    width: 400px;
+    height: 400px;
+    border: 2px solid red;
+    position: relative;
+    display: none;
+    background-color: white;
+  }
+  .snake {
+    width: 20px;
+    height: 20px;
+    background-color: lime;
+    position: absolute;
+    border-radius: 50%;
+  }
+  .snakeHead {
+    width: 20px;
+    height: 20px;
+    background-color: lime;
+    position: absolute;
+    border-radius: 50%;
+  }
+  .snakeEye {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background-color: black;
+    position: absolute;
+  }
+  .food {
+    width: 20px;
+    height: 20px;
+    background-color: red;
+    position: absolute;
+    border-radius: 50%;
+  }
+  #startButton {
+    padding: 10px 20px;
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 1;
+  }
+  #score {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: black;
+    font-size: 18px;
+    z-index: 10;
+  }
+</style>
+</head>
+<body>
+<div id="gameCover">
+  <button id="startButton">开始游戏</button>
+</div>
+<div id="gameArea">
+  <div id="score">Score: 0</div>
+</div>
+<script>
+const gameCover = document.getElementById('gameCover');
+const gameArea = document.getElementById('gameArea');
+const scoreDisplay = document.getElementById('score');
+const startButton = document.getElementById('startButton');
+const gameWidth = 400;
+const gameHeight = 400;
+const snakeSize = 20;
+let snake;
+let food;
+let dx;
+let dy;
+let lastRenderTime;
+let gameOver;
+let gameRunning = false;
+let raf;
+let score = 0; // Initialize score variable
+
+function resetGame() {
+  snake = [{x: 60, y: 60}, {x: 40, y: 60}];
+  dx = snakeSize;
+  dy = 0;
+  lastRenderTime = 0;
+  gameOver = false;
+  gameRunning = false;
+  score = 0; // Reset score when game is reset
+  scoreDisplay.textContent = 'Score: ' + score; // Reset score display
+  placeFood();
+  gameArea.innerHTML = '';
+  gameCover.style.display = 'flex';
+  gameArea.style.display = 'none';
+  startButton.innerText = '开始游戏';
+}
+
+function placeFood() {
+  do {
+    food = {
+      x: Math.floor(Math.random() * ((gameWidth - snakeSize) / snakeSize)) * snakeSize,
+      y: Math.floor(Math.random() * ((gameHeight - snakeSize) / snakeSize)) * snakeSize
+    };
+  } while (snake.some(segment => segment.x === food.x && segment.y === food.y));
+}
+
+function gameFrame(currentTime) {
+  if (!lastRenderTime || currentTime - lastRenderTime > 100) {
+    updateGame();
+    drawGame();
+    lastRenderTime = currentTime;
+  }
+  if (!gameOver) {
+    raf = requestAnimationFrame(gameFrame);
+  } else if (score > 10) { // Check if score exceeds threshold
+    showVictoryScreen();
+  } else {
+    resetGame();
+  }
+}
+
+function startGame() {
+  resetGame();
+  gameRunning = true;
+  gameCover.style.display = 'none';
+  gameArea.style.display = 'block';
+  requestAnimationFrame(gameFrame);
+}
+
+startButton.addEventListener('click', startGame);
+
+function updateGame() {
+  const head = {...snake[0]};
+  head.x += dx;
+  head.y += dy;
+  snake.unshift(head);
+  
+  if (checkCollision(head)) {
+    gameOver = true;
+    return;
+  }
+  
+  if (head.x === food.x && head.y === food.y) {
+    score++; // Increment score when food is eaten
+    scoreDisplay.textContent = 'Score: ' + score; // Update score display
+    placeFood();
+    if (score > 10) { // Check if score exceeds threshold for victory
+      gameOver = true;
+      return;
+    }
+  } else {    snake.pop("C:\Users\CiCi\Desktop\DALL·E 2024-03-10 13.03.23 - Imagine a screen showing the victory scene of a classic Snake game, filled with the sense of accomplishment that comes with winning. The entire grid i.webp");
+  }
+}
+
+function drawGame() {
+  gameArea.innerHTML = '<div id="score">Score: ' + score + '</div>'; // Update score in the game area
+  snake.forEach((segment, index) => {
+    const snakeElement = document.createElement('div');
+    snakeElement.style.left = `${segment.x}px`;
+    snakeElement.style.top = `${segment.y}px`;
+    snakeElement.classList.add('snake');
+    if (index === 0) {
+      // Add eyes to the head
+      snakeElement.classList.add('snakeHead');
+      const eye1 = document.createElement('div');
+      const eye2 = document.createElement('div');
+      eye1.classList.add('snakeEye');
+      eye2.classList.add('snakeEye');
+      // Position the eyes
+      eye1.style.left = '5px';
+      eye1.style.top = '6px';
+      eye2.style.right = '5px';
+      eye2.style.top = '6px';
+      snakeElement.appendChild(eye1);
+      snakeElement.appendChild(eye2);
+    }
+    gameArea.appendChild(snakeElement);
+  });
+
+  const foodElement = document.createElement('div');
+  foodElement.style.left = `${food.x}px`;
+  foodElement.style.top = `${food.y}px`;
+  foodElement.classList.add('food');
+  gameArea.appendChild(foodElement);
+}
+
+function checkCollision(head) {
+  if (head.x < 0 || head.x >= gameWidth || head.y < 0 || head.y >= gameHeight) {
+    return true;
+  }
+  return snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y);
+}
+
+function showVictoryScreen() {
+  gameOver = true;
+  gameArea.style.display = 'none';
+  gameCover.style.display = 'none';
+  victoryScreen.style.display = 'flex';
+  cancelAnimationFrame(raf);
+}
+
+document.addEventListener('keydown', function(e) {
+  if (gameRunning) {
+    if (e.key === 'ArrowUp' && dy === 0) {
+      dx = 0;
+      dy = -snakeSize;
+    } else if (e.key === 'ArrowDown' && dy === 0) {
+      dx = 0;
+      dy = snakeSize;
+    } else if (e.key === 'ArrowLeft' && dx === 0) {
+      dx = -snakeSize;
+      dy = 0;
+    } else if (e.key === 'ArrowRight' && dx === 0) {
+      dx = snakeSize;
+      dy = 0;
+    }
+  }
+});
+</script>
+</body>
+</html>
